@@ -8,9 +8,6 @@ function main(params) {
 	var lifecycleEvent = params.lifecycleEvent;
 	var triggerName = params.triggerName.split("/");
 	var whiskKey = whisk.getAuthKey().split(":");
-	// var endpoint = 'openwhisk.ng.bluemix.net';
-
-	// var whiskCallbackUrl = 'https://' + whisk.getAuthKey() + "@" + endpoint + '/api/v1/namespaces/' + triggerName[1] + '/triggers/' + triggerName[2];
 
 	var lifecycleEvent = params.lifecycleEvent || 'CREATE';
 	if (lifecycleEvent == 'CREATE') {
