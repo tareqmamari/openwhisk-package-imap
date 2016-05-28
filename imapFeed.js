@@ -48,9 +48,13 @@ function main(params) {
 			}
 		});
 	} else if (lifecycleEvent == 'RESUME') {
-		return whisk.error({error:"RESUME ligecycleEvent not available yet"});
+		return whisk.error({
+			error: "RESUME lifecycleEvent not available yet"
+		});
 	} else if (ligecycleEvent == 'PAUSE') {
-		return whisk.error({error:"PAUSE ligecycleEvent not available yet"});
+		return whisk.error({
+			error: "PAUSE lifecycleEvent not available yet"
+		});
 	} else {
 		var options = {
 			method: "DELETE",
