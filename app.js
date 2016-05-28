@@ -107,12 +107,11 @@ function handleTriggerCreation(newTrigger, callback) {
 			};
 
 			callback(null, "OK");
-
 			console.log("Message count in INBOX: ", info.count);
 
 			client.on("new", (message) => {
 				console.log("New incoming message " + message.title);
-
+				if(triggers[triggerIdentifier].retriesBeforeDelete>0)
 				fireTrigger(params.namespace, params.name, message, params.apiKey);
 			});
 		});
@@ -125,6 +124,7 @@ function handleTriggerCreation(newTrigger, callback) {
 }
 
 function fireTrigger(namespace, name, payload, apiKey) {
+	var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
 	var baseUrl = "https://openwhisk.ng.bluemix.net/api/v1/namespaces";
 	var keyPair = apiKey.split(':');
 	var options = {
@@ -143,6 +143,7 @@ function fireTrigger(namespace, name, payload, apiKey) {
 		if (!err && res.statusCode == 200) {
 			console.log("Trigger fired");
 		} else {
+			triggers[triggerIdentifier].retriesBeforeDelete--;
 			console.error("Can not fire trigger: " + err);
 			console.log('http status code:', (res || {}).statusCode);
 			console.log('error:', err);
