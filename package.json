@@ -12,7 +12,8 @@
     "imap": "^0.8.17",
     "inbox": "^1.1.59",
     "nano": "^6.2.0",
-    "request": "^2.72.0"
+    "request": "^2.72.0",
+    "retry": "^0.9.0"
   },
   "repository": {},
   "engines": {

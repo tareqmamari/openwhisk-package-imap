@@ -7,39 +7,45 @@ var inbox = require('inbox');
 
 var bodyParser = require('body-parser');
 
+
 var cfenv = require('cfenv');
 var appEnv = cfenv.getAppEnv();
+var cloudant = appEnv.getServiceCreds('Cloudant NoSQL DB-f7');
+
+var retry = require('retry');
+var operation = retry.operation({
+	retries: 5,
+	factor: 3,
+	minTimeout: 1 * 1000,
+	maxTimeout: 60 * 1000,
+	randomize: true,
+});
+
 
 var retriesBeforeDelete = 5;
 var triggers = {};
 
-
 /*****CLOUDANT******/
-// var cloudantUsername = process.env.CLOUDANT_USERNAME;
-// var cloudantPassword = process.env.CLOUDANT_PASSWORD;
-// var cloudantDbPrefix = process.env.DB_PREFIX;
-// var cloudantDatabase = cloudantDbPrefix + "imapservice";
-// var nano = require('nano')('https://' + cloudantUsername + ':' + cloudantPassword + '@' + cloudantUsername + '.cloudant.com');
-// nano.db.create(cloudantDatabase);
-// var db = nano.db.use(cloudantDatabase);
+var cloudantUsername = cloudant.username;
+var cloudantPassword = cloudant.password;
+var cloudantDbPrefix = 'openwhisk_';
+var cloudantDatabase = cloudantDbPrefix + 'imapservice';
+var nano = require('nano')(cloudant.url);
+nano.db.create(cloudantDatabase);
+var db = nano.db.use(cloudantDatabase);
 /*****CLOUDANT******/
-
 
 //process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 app.use(bodyParser.json());
 
-
-app.get("/ping", (req, res) => {
+app.get('/ping', (req, res) => {
 	res.send({
 		msg: 'pong'
 	});
 });
 
-
 app.post('/triggers', isAuthenticated, (req, res) => {
-	console.log("# of triggers", Object.keys(triggers).length);
-
 	var method = 'POST /triggers';
 	var newTrigger = req.body;
 	console.log("GOT: " + JSON.stringify(newTrigger));
@@ -61,10 +67,14 @@ app.post('/triggers', isAuthenticated, (req, res) => {
 	}
 
 	newTrigger.apiKey = req.user.uuid + ":" + req.user.key;
+	var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
+
 	handleTriggerCreation(newTrigger, (error, result) => {
 		if (error) {
 			console.error(error);
-			return sendError(method, 400, "Trigger can not be created", res);
+			res.status(400).json({
+				failed: 'Trigger can not be created'
+			});
 		} else {
 			res.status(201).json({
 				ok: 'your trigger was created successfully'
@@ -72,10 +82,22 @@ app.post('/triggers', isAuthenticated, (req, res) => {
 		}
 	});
 
+	operation.attempt((currentAttempt) => {
+		db.insert(newTrigger, triggerIdentifier, (err) => {
+			if (operation.retry(err)) {
+				console.log("trigger can not be inserted into DB, currentAttempt: ", currentAttempt, "out of :");
+				return;
+			}
+			console.log("inserted successfully");
+
+		});
+	});
+
 });
 
+
 function handleTriggerCreation(newTrigger, callback) {
-	var triggerIdentifier;
+	var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
 
 	var client = inbox.createConnection(false, newTrigger.host, {
 		secureConnection: true,
@@ -84,7 +106,6 @@ function handleTriggerCreation(newTrigger, callback) {
 			pass: newTrigger.pass
 		}
 	});
-
 
 	client.connect();
 
@@ -95,27 +116,24 @@ function handleTriggerCreation(newTrigger, callback) {
 				return callback(err, null);
 			}
 
-			var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
-			console.log("triggerIdentifier", triggerIdentifier);
 			triggers[triggerIdentifier] = {
 				client: client,
 				retriesLeft: retriesBeforeDelete,
 				apikey: newTrigger.apiKey,
 				name: newTrigger.name,
 				namespace: newTrigger.namespace
-
 			};
 
 			callback(null, "OK");
-			console.log("Message count in INBOX: ", info.count);
+
+			console.log("Message count in ",newTrigger.mailbox,":", info.count);
 
 			client.on("new", (message) => {
 				console.log("New incoming message " + message.title);
-				if(triggers[triggerIdentifier].retriesBeforeDelete>0)
-				fireTrigger(params.namespace, params.name, message, params.apiKey);
+
+				fireTrigger(newTrigger.namespace, newTrigger.name, message, newTrigger.apiKey);
 			});
 		});
-
 	});
 
 	client.on("error", (error) => {
@@ -124,24 +142,23 @@ function handleTriggerCreation(newTrigger, callback) {
 }
 
 function fireTrigger(namespace, name, payload, apiKey) {
-	var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
+	var triggerIdentifier = getTriggerIdentifier(apiKey, namespace, name);
 	var baseUrl = "https://openwhisk.ng.bluemix.net/api/v1/namespaces";
 	var keyPair = apiKey.split(':');
 	var options = {
 		method: "POST",
 		url: baseUrl + "/" + namespace + "/triggers/" + name,
-		body: JSON.stringify(payload),
+		json: payload,
 		auth: {
-			user: apiKey[0],
-			pass: apiKey[1]
-		},
-		headers: {
-			'Content-Type': 'application/json'
+			user: keyPair[0],
+			pass: keyPair[1]
 		}
 	};
+
 	request(options, (err, res, body) => {
 		if (!err && res.statusCode == 200) {
 			console.log("Trigger fired");
+			triggers[triggerIdentifier].retriesBeforeDelete = retriesBeforeDelete;
 		} else {
 			triggers[triggerIdentifier].retriesBeforeDelete--;
 			console.error("Can not fire trigger: " + err);
@@ -152,17 +169,17 @@ function fireTrigger(namespace, name, payload, apiKey) {
 	});
 }
 
-app.delete('/triggers/:namespace/:name', isAuthenticated, function(req, res) {
+app.delete('/triggers/:namespace/:name', isAuthenticated, (req, res) => {
 	var deleted = handleTriggerDeletion(req.params.namespace, req.params.name, req.user.uuid + ':' + req.user.key);
-	if (deleted) {
+	if (deleted) 
 		res.status(200).json({
 			ok: 'trigger ' + req.params.name + ' successfully deleted'
 		});
-	} else {
+	 else 
 		res.status(404).json({
 			error: 'trigger ' + req.params.name + ' not found'
 		});
-	}
+	
 });
 
 function handleTriggerDeletion(namespace, name, apikey) {
@@ -179,15 +196,17 @@ function handleTriggerDeletion(namespace, name, apikey) {
 
 		console.log('trigger', triggerIdentifier, 'successfully deleted');
 
-		// db.get(triggerIdentifier, function(err, body) {
-		// 	if (!err) {
-		// 		db.destroy(body._id, body._rev, function(err) {
-		// 			if (err) logger.error(tid, method, 'there was an error while deleting', triggerIdentifier, 'from database');
-		// 		});
-		// 	} else {
-		// 		logger.error(tid, method, 'there was an error while deleting', triggerIdentifier, 'from database');
-		// 	}
-		// });
+		db.get(triggerIdentifier, (err, body) => {
+			if (!err) {
+				db.destroy(body._id, body._rev, (err) => {
+					if (err) {
+						console.error(err);
+					}
+				});
+			} else {
+				console.error(method, 'there was an error while deleting', triggerIdentifier, 'from database');
+			}
+		});
 		return true;
 	} else {
 		console.log('trigger', triggerIdentifier, 'could not be found');
@@ -209,7 +228,6 @@ function isAuthenticated(req, res, next) {
 	if (!auth)
 		return sendError(method, 401, "Unauthorized: authentication header expected", res);
 
-
 	req.user = {
 		uuid: auth[1],
 		key: auth[2]
@@ -229,9 +247,32 @@ function getTriggerIdentifier(apikey, namespace, name) {
 	return apikey + '/' + namespace + '/' + name;
 }
 
-app.listen(appEnv.port || 3000, '0.0.0.0', () => {
-	// app.listen(3000, '0.0.0.0', () => {
 
-	// console.log("server starting on " + (3000));
-	console.log("server starting on " + (appEnv.port || 3000));
+
+function resetSystem() {
+	var method = 'resetSystem';
+	// logger.info(tid, method, 'resetting system from last state');
+	console.log(method, 'resetting system from last state');
+	db.list({
+		include_docs: true
+	}, (err, body) => {
+		if (!err) {
+			body.rows.forEach((trigger) => {
+				handleTriggerCreation(trigger.doc, (error, result) => {
+					if (error) {
+						console.warn(error);
+						console.error(trigger.doc.triggerName, "can not be triggered");
+					}
+				});
+			});
+		} else {
+			console.log(method, 'could not get latest state from database');
+			// logger.error(tid, method, 'could not get latest state from database');
+		}
+	});
+}
+
+app.listen(appEnv.port || 3000, '0.0.0.0', () => {
+	console.log("server starting on " , (appEnv.url || 'localhost'),":",(appEnv.port || 3000));
+	resetSystem();
 });
