@@ -48,7 +48,6 @@ app.get('/ping', (req, res) => {
 app.post('/triggers', isAuthenticated, (req, res) => {
 	var method = 'POST /triggers';
 	var newTrigger = req.body;
-	console.log("GOT: " + JSON.stringify(newTrigger));
 
 	if (!newTrigger.user) {
 		return sendError(method, 400, "Missing parameters: required user parameter is missing", res);
