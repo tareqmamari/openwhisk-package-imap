@@ -7,6 +7,7 @@ var inbox = require('inbox');
 
 var bodyParser = require('body-parser');
 
+const crypto = require('./crypto.js');
 
 var cfenv = require('cfenv');
 var appEnv = cfenv.getAppEnv();
@@ -17,8 +18,7 @@ var operation = retry.operation({
 	retries: 5,
 	factor: 3,
 	minTimeout: 1 * 1000,
-	maxTimeout: 60 * 1000,
-	randomize: true,
+	maxTimeout: 60 * 1000
 });
 
 
@@ -47,6 +47,7 @@ app.get('/ping', (req, res) => {
 
 app.post('/triggers', isAuthenticated, (req, res) => {
 	var method = 'POST /triggers';
+	console.log(method, "Incoming request");
 	var newTrigger = req.body;
 
 	if (!newTrigger.user) {
@@ -68,6 +69,7 @@ app.post('/triggers', isAuthenticated, (req, res) => {
 	newTrigger.apiKey = req.user.uuid + ":" + req.user.key;
 	var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
 
+
 	handleTriggerCreation(newTrigger, (error, result) => {
 		if (error) {
 			console.error(error);
@@ -80,7 +82,8 @@ app.post('/triggers', isAuthenticated, (req, res) => {
 			});
 		}
 	});
-
+	
+	newTrigger.pass = crypto.encrypt(newTrigger.pass);
 	operation.attempt((currentAttempt) => {
 		db.insert(newTrigger, triggerIdentifier, (err) => {
 			if (operation.retry(err)) {
@@ -97,7 +100,6 @@ app.post('/triggers', isAuthenticated, (req, res) => {
 
 function handleTriggerCreation(newTrigger, callback) {
 	var triggerIdentifier = getTriggerIdentifier(newTrigger.apiKey, newTrigger.namespace, newTrigger.name);
-
 	var client = inbox.createConnection(false, newTrigger.host, {
 		secureConnection: true,
 		auth: {
@@ -125,7 +127,7 @@ function handleTriggerCreation(newTrigger, callback) {
 
 			callback(null, "OK");
 
-			console.log("Message count in ",newTrigger.mailbox,":", info.count);
+			console.log("Message count in ", newTrigger.mailbox, ":", info.count);
 
 			client.on("new", (message) => {
 				console.log("New incoming message " + message.title);
@@ -170,15 +172,15 @@ function fireTrigger(namespace, name, payload, apiKey) {
 
 app.delete('/triggers/:namespace/:name', isAuthenticated, (req, res) => {
 	var deleted = handleTriggerDeletion(req.params.namespace, req.params.name, req.user.uuid + ':' + req.user.key);
-	if (deleted) 
+	if (deleted)
 		res.status(200).json({
 			ok: 'trigger ' + req.params.name + ' successfully deleted'
 		});
-	 else 
+	else
 		res.status(404).json({
 			error: 'trigger ' + req.params.name + ' not found'
 		});
-	
+
 });
 
 function handleTriggerDeletion(namespace, name, apikey) {
@@ -257,6 +259,7 @@ function resetSystem() {
 	}, (err, body) => {
 		if (!err) {
 			body.rows.forEach((trigger) => {
+				trigger.doc.pass = crypto.decrypt(trigger.doc.pass);
 				handleTriggerCreation(trigger.doc, (error, result) => {
 					if (error) {
 						console.warn(error);
@@ -272,6 +275,6 @@ function resetSystem() {
 }
 
 app.listen(appEnv.port || 3000, '0.0.0.0', () => {
-	console.log("server starting on " , (appEnv.url || 'localhost'),":",(appEnv.port || 3000));
+	console.log("server starting on ", (appEnv.url || 'localhost'), ":", (appEnv.port || 3000));
 	resetSystem();
 });
