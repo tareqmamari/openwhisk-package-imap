@@ -9,7 +9,6 @@
     "body-parser": "^1.15.1",
     "cfenv": "1.0.x",
     "express": "4.13.x",
-    "imap": "^0.8.17",
     "inbox": "^1.1.59",
     "nano": "^6.2.0",
     "request": "^2.72.0",
