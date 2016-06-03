@@ -2,7 +2,6 @@ var request = require('request');
 
 
 function main(params) {
-	console.log("GOT: ", params);
 	var serviceEndpont = 'http://imapserviceprovider.mybluemix.net';
 	var requiredParams = ['user', 'pass', 'host', 'mailbox'];
 	var lifecycleEvent = params.lifecycleEvent;
@@ -32,7 +31,6 @@ function main(params) {
 		};
 
 		request(options, function(error, response, body) {
-			console.log("Request is done");
 			if (!error && response.statusCode == 201) {
 				console.log(body);
 				return whisk.done({"result":"done"});
