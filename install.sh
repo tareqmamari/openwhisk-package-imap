@@ -21,7 +21,7 @@ set -x
 
 if [ $# -eq 0 ]
 then
-    echo "Usage: ./install.sh $APIHOST $AUTH $WSK_CLI"
+    echo "Usage: ./install.sh APIHOST AUTH WSK_CLI"
 fi
 
 APIHOST="$1"
@@ -35,7 +35,8 @@ $WSK_CLI --apihost $APIHOST package update --auth $AUTH --shared yes imap \
     -a description "IMAP Package" \
     -a parameters '[{"name":"host","required":true,"bindTime":true,"description":"IMAP server host"},{"name":"username","required":true,"bindTime":true,"description":"IMAP username"},{"name":"password","required":true,"bindTime":true,"type":"password","description":"IMAP username"}]'
 
-$WSK_CLI --apihost $APIHOST action update --auth $AUTH --shared yes --feed yes imap/imapFeed $PACKAGE_HOME/feeds/feed.js \
+$WSK_CLI --apihost $APIHOST action update --auth $AUTH --shared yes imap/imapFeed $PACKAGE_HOME/feeds/feed.js \
+    -a feed true \
 	-a description "A feed action that allows users to register for IMAP incoming emails notifications" \
-	-a parameters '[{"name":"host","required":true,"bindTime":true,"description":"IMAP server host"},{"name":"username","required":true,"bindTime":true,"type":"password","description":"IMAP username"},{"name":"password","required":true,"bindTime":treu,"description":"IMAP username"},{"name":"mailbox","required":false,"bindTime":false,"description":"Mailbox name"}]'
+	-a parameters '[{"name":"host","required":true,"bindTime":true,"description":"IMAP server host"},{"name":"username","required":true,"bindTime":true,"type":"password","description":"IMAP username"},{"name":"password","required":true,"bindTime":treu,"description":"IMAP username"},{"name":"mailbox","required":false,"bindTime":false,"description":"Mailbox name"}]' \
     -a sampleInput '{"host":"imap.google.com","username":"xxxxx@gmail.com","password":"XXXXXX","mailbox":"INBOX"}' \

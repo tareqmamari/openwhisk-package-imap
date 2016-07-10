@@ -35,8 +35,10 @@ To uninstall the package, please use `./uninstall.sh  $EDGE_HOST $AUTH_KEY $WSK_
 ######Usage
 To use this action, you need to pass the required parameters (refer to the table above)
 ```bash
-wsk trigger create imapTrigger -p user 'almaamaritest@gmail.com' -p pass 'XXXX' -p host 'imap.gmail.com' -p mailbox 'INBOX' --feed imapFeed
+wsk trigger create imapTrigger -p user 'almaamaritest@gmail.com' -p pass 'XXXX' -p host 'imap.gmail.com' -p mailbox 'INBOX' --feed /whisk.system/imap/imapFeed
 ```
+
+[![asciicast](A recorded asciicast)](https://asciinema.org/a/8lk50d9xkdjiqse0yhlb8viaj)
 
 ## Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
