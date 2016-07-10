@@ -38,7 +38,7 @@ To use this action, you need to pass the required parameters (refer to the table
 wsk trigger create imapTrigger -p user 'almaamaritest@gmail.com' -p pass 'XXXX' -p host 'imap.gmail.com' -p mailbox 'INBOX' --feed /whisk.system/imap/imapFeed
 ```
 
-[![asciicast](A recorded asciicast)](https://asciinema.org/a/8lk50d9xkdjiqse0yhlb8viaj)
+[![asciicast](https://asciinema.org/a/8lk50d9xkdjiqse0yhlb8viaj.png)](https://asciinema.org/a/8lk50d9xkdjiqse0yhlb8viaj)
 
 ## Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
