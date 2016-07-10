@@ -19,7 +19,7 @@ To uninstall the package, please use `./uninstall.sh  $EDGE_HOST $AUTH_KEY $WSK_
 | Entity | Type | Parameters | Description |
 | --- | --- | --- | --- |
 | `/namespace/imap` | package | host,username,password | Openwhisk Package Template |
-| `/namespace/imap/imapFeed` | action | [details](#feed) | A simple hello world action |
+| `/namespace/imap/imapFeed` | action | [details](#imapFeed) | A simple hello world action |
 
 ###Feeds
 ####imapFeed
@@ -36,13 +36,6 @@ To uninstall the package, please use `./uninstall.sh  $EDGE_HOST $AUTH_KEY $WSK_
 To use this action, you need to pass the required parameters (refer to the table above)
 ```bash
 wsk trigger create imapTrigger -p user 'almaamaritest@gmail.com' -p pass 'XXXX' -p host 'imap.gmail.com' -p mailbox 'INBOX' --feed imapFeed
-```
-
-Output:
-```javascript
-{
-  "message": "Hello, Openwhisk!"
-}
 ```
 
 ## Contributing
