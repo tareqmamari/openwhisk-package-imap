@@ -1,11 +1,9 @@
-var express = require('express');
-var app = express();
+var app = require('express')();
+var bodyParser = require('body-parser');
 
 var request = require('request');
 
 var inbox = require('inbox');
-
-var bodyParser = require('body-parser');
 
 const crypto = require('./crypto.js');
 
@@ -45,7 +43,7 @@ app.get('/ping', (req, res) => {
 	});
 });
 
-app.post('/triggers', isAuthenticated, (req, res) => {
+app.post('/triggers', [isAuthenticated,], (req, res) => {
 	var method = 'POST /triggers';
 	console.log(method, "Incoming request");
 	var newTrigger = req.body;
@@ -73,9 +71,10 @@ app.post('/triggers', isAuthenticated, (req, res) => {
 	handleTriggerCreation(newTrigger, (error, result) => {
 		if (error) {
 			console.error(error);
-			res.status(400).json({
-				failed: 'Trigger can not be created'
-			});
+			return sendError(method,400,'Failed: Trigger can not be created');
+			// res.status(400).json({
+			// 	failed: 'Trigger can not be created'
+			// });
 		} else {
 			res.status(201).json({
 				ok: 'your trigger was created successfully'
@@ -131,7 +130,6 @@ function handleTriggerCreation(newTrigger, callback) {
 
 			client.on("new", (message) => {
 				console.log("New incoming message " + message.title);
-
 				fireTrigger(newTrigger.namespace, newTrigger.name, message, newTrigger.apiKey);
 			});
 		});
@@ -180,7 +178,6 @@ app.delete('/triggers/:namespace/:name', isAuthenticated, (req, res) => {
 		res.status(404).json({
 			error: 'trigger ' + req.params.name + ' not found'
 		});
-
 });
 
 function handleTriggerDeletion(namespace, name, apikey) {

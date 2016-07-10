@@ -1,17 +1,56 @@
-# IMAP service provider
-This project is a service provider to enable receiving new email through IMAP protocol.
+IMAP Openwhisk Package
+==========================
+[![Build Status](https://travis-ci.org/tareqmamari/openwhisk-package-imap.svg?branch=master)](https://travis-ci.org/tareqmamari/openwhisk-package-imap)
 
-## Info:
-- 100% Nodejs
-- Deployed in bluemix as a CF Nodejs application.
+This package contains an imap events provider as well as a feed that allows openwhisk users to register for incoming emails notifications through imap protocol.
 
-## Usage
-  - The service is deployed in `http://imapserviceprovider.mybluemix.net`. To use it within Openwhisk, you will need to use a feed action to create a trigger through it.
-  - The feed action is available as a public action within my namespace: `/talmaam@de.ibm.com_mainSpace/imapFeed`.
-  - Create trigger and pass the needed parameters:
-    `wsk trigger create imapTrigger -p user 'EMAIL' -p pass 'PASSWORD' -p host 'HOST' -p mailbox 'MAILBOX' --feed imapFeed`
+![Overall Architecture](images/architecture.png?raw=true "Overall Architecture")
 
-Example:
-  
-  `wsk trigger create imapTrigger -p user 'almaamaritest@gmail.com' -p pass 'XXXX' -p host 'imap.gmail.com' -p mailbox 'INBOX' --feed imapFeed`
+##How to install and uninstall this package ?
+Install the package using `./install.sh  $EDGE_HOST $AUTH_KEY $WSK_CLI`
+where :
+- **$EDGE_HOST** is where openwhisk API host
+- **$AUTH_KEY** is the authentication key
+- **$WSK_CLI** is the path of Openwhisk command interface binary
 
+To uninstall the package, please use `./uninstall.sh  $EDGE_HOST $AUTH_KEY $WSK_CLI` 
+
+##Package contents
+| Entity | Type | Parameters | Description |
+| --- | --- | --- | --- |
+| `/namespace/imap` | package | host,username,password | Openwhisk Package Template |
+| `/namespace/imap/imapFeed` | action | [details](#feed) | A simple hello world action |
+
+###Feeds
+####imapFeed
+`/namespace/imap/imapFeed` is a feed action that allow users to register for incoming emails through IMAP protocol.  
+######Parameters
+| **Parameter**     | **Type** | **Required** | **Binding Time** | **Description**| **Options** | **Default** | **Example** |
+| ------------- | ---- | -------- | ------------ | ------- | ------- | ------- |------- |
+| host | *string* | yes | yes |  IMAP server endpoint | - | - | "imap.gmail.com" |
+| username | *string* | yes | yes | IMAP username| - | - |"YYYYYYY" |
+| password | *string* | yes | yes | IMAP password| - | - |"XXXXXXX" |
+| mailbox | *string* | yes | yes | IMAP mailbox | - | - |"INBOX" |
+
+######Usage
+To use this action, you need to pass the required parameters (refer to the table above)
+```bash
+wsk trigger create imapTrigger -p user 'almaamaritest@gmail.com' -p pass 'XXXX' -p host 'imap.gmail.com' -p mailbox 'INBOX' --feed imapFeed
+```
+
+Output:
+```javascript
+{
+  "message": "Hello, Openwhisk!"
+}
+```
+
+## Contributing
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## License
+Copyright 2015-2016 IBM Corporation
+
+Licensed under the [Apache License, Version 2.0 (the "License")](http://www.apache.org/licenses/LICENSE-2.0.html).
+
+Unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an "as is" basis, without warranties or conditions of any kind, either express or implied. See the license for the specific language governing permissions and limitations under the license.

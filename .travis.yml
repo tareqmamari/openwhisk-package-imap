@@ -1,0 +1,40 @@
+# A Travis CI configuration file.
+
+sudo: required
+
+language: scala
+scala:
+   - 2.11.6
+
+services:
+  - docker
+
+env:
+  global:
+    - TERM=dumb
+
+notifications:
+  email: false
+
+# deploy:
+#   edge: true
+#   provider: bluemix
+#   username: 
+#     secure: "nE/lZD3evscao7/H/cYbq9t2G7F8rPTgYhtcGk9ayPoY4bR05ATzJWElyAREJ9MSoa0Ip2w16ptKTp9eMQz5vq7AVhrzfRr0og0A/RM8IZo9RMA5t9DAHliNbetMMbOpxRJAHm3vbRkkcIcFJt76AubZXLAhxayU6RZpDii6oyFaNHNSjzA+u/t6eFrI0S26nurHMfE0eTWNekrUiVxOLyvCKTiWMEGXRv9OlszS8i720JloZLxPI13lR24qCahdEsoCpXrWrYCsGik4HyvUEd2SVjKP28ws1VlX3fH7K4kY5f1BgrRLRajsYf/kR/k5oAE+JyoB0VSvvI7wkusQuWN+GFr3isiSy2OZ6oH8vSOStQEaR1gziYE7FY+fvF9U/ih+5yxSa/KieBb8m11P0gh5tUq0S4ip6CyYBDHmisaYUD0lsQICgiZmm0pE3gNwECJ3IcBCLDfkdEjMIuxLtXqxtMulFYFHOTy3OFBRNZ10RJpzsEPTNc2iD7TH4QSuefhs+z0HKUND4QWQcUJDEdWZc4IePrHLGIM/VK4gRDneIK2we1nTQ/9nsehL6FsXh+WdyEu8xRBY/VPiWZuMtGNU4C4e5PEcIOStRqxyarKo8+teAjqkNYdssFWJHvxEgxa2L6zMpuxlYh99cgysFkX7u6Efaw8r3fVD4Ovvpvk="
+#   password: 
+#     secure: "Gr0AVq5ciIBJ6FnRDgylP0kuVuBr2K3OQB6mUtyiom6BzY30xWImCIAVWLNTt53FPldWUu3Wy4qxg/Goayiki4S+bukIlRWWAlsQ7yX7UM3cv9Z0o3QKEwxl15iIhU54XzkbScxgrERPTGV+xXZnu9doGYRUsU6danibZskNkIYTp6u1yzC3tlfLl4feCTC779RvbPCfHafsLTcX21upKKpvMwL4ZnRAhRFK+GTWLioKh2ULoBoSvjjBIUKY/37Y5URCgrN8X2+xxJes/Ca1D9PgG6TIi5zFYla25W8iB4//0dIWvZ0YLlaGHZp/EZjLMbQbBugYzV9RRcE1+4mH0XATLHN6XHIUpf46MG4xEmCjM9o0VZWGj8weiIXGIQTuz/AcGMC5CJcI5fKyJ11xt+jF5Ooq5hO4p0b1H1qPivHtXJAbWVtLQZ4tj4smrQvmxOP7v2EXDAD0UOl/MCgGzvQid8kBN0HkodgZQifQQZ2GckSsT/7HemI+rqaP/FkOKfK+hDBmB242xmu93V/tXdVqhNy0GcptxgJXIoh9SOoSZ5xlsBF6x7DcvMugh9vryrjewXGoCl5wqdvViXAjJgVO7riWver53ssBu+1rUHxIk+NMZ6cpKUyNbsUNRObfP7u23L9A5tnjf5i76bPF6IEDB/xMyhgAXeYqGHYrM0U="
+#   api: https://api.ng.bluemix.net
+#   organization: 
+#     secure: "Vq/icpCJJnfueoYQ+OV/du4DZ8k9EEyCDq7Xk7Ws2UgN7MazDNQ+BjKds4RaO5U5wZafZmNHb0O10RYTROUiUXf+GAMbYqi3QKwgPCn7U2A/8MeEHs4IaUMY0Nb5guMo3hZaizST/f8Y+K9AJJqDnkVa7iDapEb6Fe9xNYAiDe/nOMpGtIW6gdbHBj3KqHnCpF5N73pgNZKJAP1MWXOYbNTy/AfEAdxjec1CdMtngGuHsuPUlyMcg4FseUbVdF20cdxX2hPc3ZQiVK9IyWw5Nyf48MS3zyYwCWtxIog0OmufM4Pd1TwMe70BZX7HEGzB9+5lvjd7y1BTqJMKCgwMTH2y5sxpvAFPeMmeS6FYa6LLkRp0KkEapei98dv8O45EYaEKMC50Fl2SXm42rpU6f94huaSLU0SanUNRTRF3a0gRsKwcBHFbfsNgP0xXEbTOUFtGeC+1nEOb1huHjvdONs4G9e5Zp45fvrhPLnz0Dc3TstQDKzW+ki4Ir7SKtAvjPxLxfLQEMWbEvSH2SlH0LGuJRUwwwPWGf9lvEfORRoi3Ud9ugVUQD1OXs1HX5o03SyNlq6EVTy9vvjf5RBF6upZwqSyi+KjR75h1VKpmTeTpGdOG/T277r8jj/xT9lu5BEIYmdZuSUTULCvsbbjRofquQUeJS8itEEVje1TSghQ="
+#   space: mainSpace
+#   skip_cleanup: true
+
+install: true
+
+before_install:
+  - git clone https://github.com/openwhisk/openwhisk.git
+  - cd openwhisk
+  - ./tools/travis/setup.sh
+
+script:
+- ../tools/travis/build.sh
