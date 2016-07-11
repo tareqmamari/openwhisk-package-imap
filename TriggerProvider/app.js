@@ -1,9 +1,28 @@
-var app = require('express')();
-var bodyParser = require('body-parser');
+/*
+* Copyright 2015-2016 IBM Corporation
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+
+var express = require('express');
+var app = express();
 
 var request = require('request');
 
 var inbox = require('inbox');
+
+var bodyParser = require('body-parser');
 
 const crypto = require('./crypto.js');
 
@@ -43,7 +62,7 @@ app.get('/ping', (req, res) => {
 	});
 });
 
-app.post('/triggers', [isAuthenticated,], (req, res) => {
+app.post('/triggers', isAuthenticated, (req, res) => {
 	var method = 'POST /triggers';
 	console.log(method, "Incoming request");
 	var newTrigger = req.body;
@@ -71,10 +90,9 @@ app.post('/triggers', [isAuthenticated,], (req, res) => {
 	handleTriggerCreation(newTrigger, (error, result) => {
 		if (error) {
 			console.error(error);
-			return sendError(method,400,'Failed: Trigger can not be created');
-			// res.status(400).json({
-			// 	failed: 'Trigger can not be created'
-			// });
+			res.status(400).json({
+				failed: 'Trigger can not be created'
+			});
 		} else {
 			res.status(201).json({
 				ok: 'your trigger was created successfully'
@@ -130,6 +148,7 @@ function handleTriggerCreation(newTrigger, callback) {
 
 			client.on("new", (message) => {
 				console.log("New incoming message " + message.title);
+
 				fireTrigger(newTrigger.namespace, newTrigger.name, message, newTrigger.apiKey);
 			});
 		});
@@ -178,6 +197,7 @@ app.delete('/triggers/:namespace/:name', isAuthenticated, (req, res) => {
 		res.status(404).json({
 			error: 'trigger ' + req.params.name + ' not found'
 		});
+
 });
 
 function handleTriggerDeletion(namespace, name, apikey) {
